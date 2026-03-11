@@ -21,10 +21,13 @@ export const FormControl = defineComponent({
     const error = fieldName ? formValidation?.errors[fieldName] : undefined;
     const isRequired = inputObj?.type === "element" && inputObj.props?.rules?.required === true;
 
+    const label = typeof props.label === "string" ? props.label : String(props.label ?? "");
+    const hint = typeof props.hint === "string" ? props.hint : undefined;
+
     return (
       <OpenUIFormControl>
         <OpenUILabel className="text-sm font-medium" required={isRequired}>
-          {props.label as string}
+          {label}
         </OpenUILabel>
         {renderNode(props.input)}
         {error ? (
@@ -32,8 +35,8 @@ export const FormControl = defineComponent({
             <AlertCircle size={14} />
             {error}
           </OpenUIHint>
-        ) : props.hint ? (
-          <OpenUIHint>{props.hint as string}</OpenUIHint>
+        ) : hint ? (
+          <OpenUIHint>{hint}</OpenUIHint>
         ) : null}
       </OpenUIFormControl>
     );

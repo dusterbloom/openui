@@ -4,10 +4,42 @@ import "@openuidev/react-ui/components.css";
 import { openAIAdapter, openAIMessageFormat } from "@openuidev/react-headless";
 import { FullScreen } from "@openuidev/react-ui";
 import { openuiChatLibrary } from "@openuidev/react-ui/genui-lib";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const btnStyle = (dark: boolean) => ({
+  fontSize: 13,
+  padding: "6px 12px",
+  borderRadius: 6,
+  border: "1px solid rgba(128,128,128,0.3)",
+  background: dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+  color: dark ? "#fff" : "#333",
+  cursor: "pointer" as const,
+  backdropFilter: "blur(8px)",
+});
 
 export default function Page() {
   const [mode, setMode] = useState<"light" | "dark">("light");
+  const [models, setModels] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const modelRef = useRef(selectedModel);
+  modelRef.current = selectedModel;
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then((r) => r.json())
+      .then((data) => {
+        const list: string[] = data.models ?? [];
+        setModels(list);
+        if (list.length > 0 && !selectedModel) {
+          const defaultModel = list.find((m: string) => m.includes("9B")) ?? list[0];
+          setSelectedModel(defaultModel);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const dark = mode === "dark";
+
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       <nav
@@ -21,20 +53,28 @@ export default function Page() {
           alignItems: "center",
         }}
       >
+        {models.length > 0 && (
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            style={{
+              ...btnStyle(dark),
+              maxWidth: 260,
+              appearance: "auto" as const,
+            }}
+          >
+            {models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           onClick={() => setMode((m) => (m === "light" ? "dark" : "light"))}
-          style={{
-            fontSize: 13,
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: "1px solid rgba(128,128,128,0.3)",
-            background: mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-            color: mode === "dark" ? "#fff" : "#333",
-            cursor: "pointer",
-            backdropFilter: "blur(8px)",
-          }}
+          style={btnStyle(dark)}
         >
-          {mode === "light" ? "Switch to Dark" : "Switch to Light"}
+          {mode === "light" ? "Dark" : "Light"}
         </button>
       </nav>
       <FullScreen
@@ -44,6 +84,7 @@ export default function Page() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               messages: openAIMessageFormat.toApi(messages),
+              model: modelRef.current,
             }),
             signal: abortController.signal,
           });

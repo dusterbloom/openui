@@ -197,13 +197,13 @@ function sseToolCallArgs(
 // ── Route handler ──
 
 export async function POST(req: NextRequest) {
-  const { messages } = await req.json();
+  const { messages, model } = await req.json();
 
   const client = new OpenAI({
-    apiKey: process.env.OPENROUTER_API_KEY,
-    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENAI_API_KEY ?? "omlx",
+    baseURL: process.env.OPENAI_BASE_URL ?? "http://localhost:8000/v1",
   });
-  const MODEL = "openai/gpt-5.4";
+  const MODEL = model || process.env.OPENAI_MODEL || "Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-mlx_8bit";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cleanMessages = (messages as any[])

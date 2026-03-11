@@ -97,6 +97,9 @@ function renderDeep(value: unknown): React.ReactNode {
     if (obj.type === "element") {
       return <RenderNode node={obj as unknown as ElementNode} />;
     }
+    // Non-element objects (e.g. misplaced {required: true} from local models)
+    // must not be passed as React children — stringify gracefully.
+    return JSON.stringify(value);
   }
 
   return null;
