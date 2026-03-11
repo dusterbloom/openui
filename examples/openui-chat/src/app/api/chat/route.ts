@@ -85,6 +85,59 @@ function searchWeb({ query }: { query: string }): Promise<string> {
   });
 }
 
+const RSS_PRESETS: Record<string, string[]> = {
+  tech: [
+    "https://hnrss.org/frontpage?count=10",
+    "https://www.theverge.com/rss/index.xml",
+  ],
+  world: [
+    "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+  ],
+  science: [
+    "https://www.sciencedaily.com/rss/top.xml",
+    "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+  ],
+  business: [
+    "https://feeds.bbci.co.uk/news/business/rss.xml",
+    "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+  ],
+};
+
+function xmlText(xml: string, tag: string): string {
+  const re = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>|<${tag}[^>]*>([\\s\\S]*?)</${tag}>`);
+  const m = xml.match(re);
+  return (m?.[1] ?? m?.[2] ?? "").trim();
+}
+
+async function fetchRss({ feeds, category, count }: { feeds?: string[]; category?: string; count?: number }): Promise<string> {
+  const max = Math.min(count ?? 8, 15);
+  const urls: string[] = feeds?.length
+    ? feeds
+    : RSS_PRESETS[(category ?? "tech").toLowerCase()] ?? RSS_PRESETS.tech;
+
+  const results: { source: string; title: string; link: string; description: string; pubDate: string }[] = [];
+
+  await Promise.all(urls.map(async (url) => {
+    try {
+      const res = await fetch(url, { headers: { "User-Agent": "OpenUI-News/1.0" }, signal: AbortSignal.timeout(8000) });
+      const xml = await res.text();
+      // Handle both RSS <item> and Atom <entry>
+      const items = xml.split(/<item[\s>]/).slice(1).concat(xml.split(/<entry[\s>]/).slice(1));
+      const source = xmlText(xml, "title");
+      for (const item of items.slice(0, max)) {
+        const title = xmlText(item, "title");
+        const link = xmlText(item, "link") || (item.match(/href="([^"]+)"/) ?? [])[1] || "";
+        const desc = xmlText(item, "description") || xmlText(item, "summary") || xmlText(item, "content");
+        const pubDate = xmlText(item, "pubDate") || xmlText(item, "published") || xmlText(item, "updated");
+        if (title) results.push({ source, title, link, description: desc.replace(/<[^>]+>/g, "").slice(0, 200), pubDate });
+      }
+    } catch { /* skip failed feeds */ }
+  }));
+
+  return JSON.stringify({ category: category ?? "custom", articleCount: results.length, articles: results.slice(0, max) });
+}
+
 // ── Tool definitions ──
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,6 +195,23 @@ const tools: any[] = [
         required: ["query"],
       },
       function: searchWeb,
+      parse: JSON.parse,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "fetch_rss",
+      description: "Fetch articles from RSS feeds. Use category presets (tech, world, science, business) or provide custom feed URLs. Returns article titles, descriptions, links, and dates.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Preset category: tech, world, science, business", enum: ["tech", "world", "science", "business"] },
+          feeds: { type: "array", items: { type: "string" }, description: "Custom RSS feed URLs (overrides category)" },
+          count: { type: "number", description: "Max articles to fetch (default 8, max 15)" },
+        },
+      },
+      function: fetchRss,
       parse: JSON.parse,
     },
   },

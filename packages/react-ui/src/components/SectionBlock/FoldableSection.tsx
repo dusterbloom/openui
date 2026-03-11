@@ -2,7 +2,6 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import clsx from "clsx";
 import { ChevronRight } from "lucide-react";
 import React, { forwardRef } from "react";
-import { IconButton } from "../IconButton";
 import { Separator } from "../Separator";
 import "./foldableSection.scss";
 
@@ -63,14 +62,14 @@ export const FoldableSectionTrigger = forwardRef<
       <div className="openui-foldable-section-trigger-content-wrapper">
         <Separator className="openui-foldable-section-trigger-content-separator" />
         <div className="openui-foldable-section-trigger-content-icon-button-wrapper">
-          <IconButton
-            icon={
+          <span
+            className="openui-icon-button openui-icon-button-secondary openui-icon-button-3-extra-small openui-icon-button-square openui-foldable-section-trigger-content-icon-button"
+            aria-hidden="true"
+          >
+            <span className="openui-icon-button-icon">
               <ChevronRight className="openui-foldable-section-trigger-content-icon-button-icon" />
-            }
-            size="3-extra-small"
-            variant="secondary"
-            className="openui-foldable-section-trigger-content-icon-button"
-          />
+            </span>
+          </span>
           <div className="openui-foldable-section-trigger-content-text">{text}</div>
         </div>
       </div>

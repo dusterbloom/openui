@@ -96,10 +96,10 @@ export default function Page() {
         conversationStarters={{
           variant: "short",
           options: [
+            { displayText: "Today's News", prompt: "Build me a newspaper with the latest tech, world, and science news. Use tabs for each category, with article titles, descriptions, and follow-up links." },
             { displayText: "Weather in Tokyo", prompt: "What's the weather like in Tokyo right now?" },
             { displayText: "AAPL stock price", prompt: "What's the current Apple stock price?" },
             { displayText: "Contact form", prompt: "Build me a contact form with name, email, topic, and message fields." },
-            { displayText: "Data table", prompt: "Show me a table of the top 5 programming languages by popularity with year created." },
           ],
         }}
       />
